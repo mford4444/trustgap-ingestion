@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 def get_firm_feed_url():
     base_url = "https://reports.adviserinfo.sec.gov/reports/CompilationReports/IA_FIRM_SEC_Feed_{}.xml.gz"
 
-    for offset in [0, 1]:  # Try today first, then yesterday
+    for offset in [0]:  # Try only today (simulate failure)
         date_str = (datetime.today() - timedelta(days=offset)).strftime("%m_%d_%Y")
         url = base_url.format(date_str)
         print(f"🔎 Checking availability for feed: {url}")
