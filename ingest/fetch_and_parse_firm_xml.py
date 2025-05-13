@@ -13,7 +13,25 @@ from datetime import datetime
 from storage.firm_cache import load_previous_firms, save_current_firms
 
 # Change this URL depending on whether you want to test .zip or .gz
-FIRM_FEED_URL = "https://reports.adviserinfo.sec.gov/reports/CompilationReports/IA_FIRM_SEC_Feed_05_13_2025.xml.gz"
+from datetime import datetime, timedelta
+
+def get_firm_feed_url():
+    base_url = "https://reports.adviserinfo.sec.gov/reports/CompilationReports/IA_FIRM_SEC_Feed_{}.xml.gz"
+
+    for offset in [0, 1]:  # Try today first, then yesterday
+        date_str = (datetime.today() - timedelta(days=offset)).strftime("%m_%d_%Y")
+        url = base_url.format(date_str)
+        print(f"🔎 Checking availability for feed: {url}")
+        response = requests.head(url)
+        if response.status_code == 200:
+            print(f"✅ Using feed URL: {url}")
+            return url
+        else:
+            print(f"⚠️ Feed not found for {date_str}")
+
+    raise Exception("❌ No valid SEC firm feed found for today or yesterday.")
+
+FIRM_FEED_URL = get_firm_feed_url()
 
 def download_and_extract_xml(url):
     print("📥 Downloading XML from:", url)
