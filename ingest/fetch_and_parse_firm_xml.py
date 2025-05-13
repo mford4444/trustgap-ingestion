@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import requests
 import xml.etree.ElementTree as ET
 import zipfile
@@ -5,9 +9,10 @@ import gzip
 import io
 from datetime import datetime
 
+from storage.firm_cache import load_previous_firms, save_current_firms
+
 # Change this URL depending on whether you want to test .zip or .gz
-FIRM_FEED_URL = "https://reports.adviserinfo.sec.gov/reports/CompilationReports/IA_FIRM_SEC_Feed_05_12_2025.xml.gz"
-# Example GZ: https://files.adviserinfo.sec.gov/IAPD/IA_FIRM_SEC_Feed_05_13_2025.xml.gz
+FIRM_FEED_URL = "https://reports.adviserinfo.sec.gov/reports/CompilationReports/IA_FIRM_SEC_Feed_05_13_2025.xml.gz"
 
 def download_and_extract_xml(url):
     print("📥 Downloading XML from:", url)
@@ -40,11 +45,22 @@ def parse_firms(xml_content):
     root = ET.fromstring(xml_content)
     firms = {}
 
-    for firm in root.findall(".//Firm"):
-        crd = firm.findtext("FirmCRDNumber")
-        name = firm.findtext("PrimaryBusinessName")
-        filing_date = firm.findtext("FilingDate")
-        filing_type = firm.findtext("FilingType", "").strip().upper()
+    firm_elements = root.find("Firms")
+    if firm_elements is None:
+        print("❌ Could not find <Firms> in XML.")
+        return []
+
+    for firm in firm_elements.findall("Firm"):
+        info = firm.find("Info")
+        filing = firm.find("Filing")
+
+        if info is None or filing is None:
+            continue
+
+        crd = info.attrib.get("FirmCrdNb")
+        name = info.attrib.get("BusNm")
+        filing_date = filing.attrib.get("Dt")
+        filing_type = "SEC"  # This feed is SEC-only, but you could add logic later
 
         if not crd or not filing_date:
             continue
@@ -69,6 +85,22 @@ if __name__ == "__main__":
     xml_data = download_and_extract_xml(FIRM_FEED_URL)
     parsed_firms = parse_firms(xml_data)
 
-    print("\n🔎 Preview of first 5 firms:")
-    for firm in parsed_firms[:5]:
-        print(f"{firm['CRD']}: {firm['Name']} | {firm['FilingType']} | {firm['FilingDate'].date()}")
+    print("\n📊 Comparing to previous run...")
+    previous_firms = load_previous_firms()
+    new_or_updated = []
+
+    for firm in parsed_firms:
+        crd = firm["CRD"]
+        filing_date = firm["FilingDate"].strftime("%Y-%m-%d")
+        prev_date = previous_firms.get(crd)
+
+        if prev_date is None or filing_date > prev_date:
+            new_or_updated.append(firm)
+
+    print(f"🔍 New or updated firms: {len(new_or_updated)}")
+    for firm in new_or_updated[:5]:
+        print(f"{firm['CRD']}: {firm['Name']} | {firm['FilingDate'].date()}")
+
+    # Save current run for tomorrow's comparison
+    save_current_firms(parsed_firms)
+
