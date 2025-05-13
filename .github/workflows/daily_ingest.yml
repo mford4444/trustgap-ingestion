@@ -31,3 +31,29 @@ jobs:
       - name: 🚀 Run SEC firm ingestion
         run: |
           python ingest/fetch_and_parse_firm_xml.py
+
+  run-state-ingestion:
+    runs-on: ubuntu-latest
+
+    env:
+      AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
+      AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+      AIRTABLE_TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
+
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🚀 Run STATE firm ingestion
+        run: |
+          python ingest/fetch_and_parse_state_firm_xml.py
