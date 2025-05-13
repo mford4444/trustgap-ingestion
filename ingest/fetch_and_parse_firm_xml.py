@@ -1,6 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from storage.airtable_writer import write_firms_to_airtable
 
 import requests
 import xml.etree.ElementTree as ET
@@ -101,6 +102,11 @@ if __name__ == "__main__":
     for firm in new_or_updated[:5]:
         print(f"{firm['CRD']}: {firm['Name']} | {firm['FilingDate'].date()}")
 
+    if new_or_updated:
+        print("📤 Sending records to Airtable...")
+        write_firms_to_airtable(new_or_updated)
+
     # Save current run for tomorrow's comparison
     save_current_firms(parsed_firms)
+
 
