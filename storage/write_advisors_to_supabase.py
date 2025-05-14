@@ -59,7 +59,23 @@ def write_advisors_to_supabase(advisors, batch_size=100, upsert_on=None, resume_
                 url += f"?on_conflict={upsert_on}"
 
             resp = requests.post(url, headers=HEADERS, json=payload)
-            if resp.status_code not in [200, 201]:
+
+            # If batch fails, fall back to writing individually
+            if resp.status_code == 409 and upsert_on:
+                print(f"⚠️ Batch conflict on upsert — retrying individually...")
+                for advisor in payload:
+                    try:
+                        single_resp = requests.post(url, headers=HEADERS, json=[advisor])
+                        if single_resp.status_code in [200, 201]:
+                            total_written += 1
+                            if resume_from_checkpoint:
+                                processed_crds.add(advisor["crd_number"])
+                        else:
+                            print(f"❌ Advisor {advisor['crd_number']} failed: {single_resp.status_code}")
+                    except Exception as e:
+                        print(f"❌ Error posting individual advisor {advisor['crd_number']}: {e}")
+
+            
                 print(f"❌ Failed to write batch {i // batch_size}: {resp.status_code} - {resp.text}")
             else:
                 print(f"✅ Wrote batch {i // batch_size + 1} ({len(batch)} records)")
