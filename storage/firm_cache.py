@@ -15,9 +15,7 @@ def load_previous_firms():
         return {}
 
 def save_current_firms(firms):
-    cache = {
-        f["CRD"]: f["FilingDate"].strftime("%Y-%m-%d")
-        for f in firms
-    }
+    cache = {str(f["crd_number"]): f["filing_date"].strftime("%Y-%m-%d") for f in firms}
+
     with open(CACHE_FILE, "w") as f:
         json.dump(cache, f, indent=2)
