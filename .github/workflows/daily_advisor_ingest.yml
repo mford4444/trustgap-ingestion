@@ -29,7 +29,7 @@ jobs:
 
       - name: 🚀 Run Advisor ingestion
         run: |
-          python ingest/fetch_and_parse_advisor_xml.py
+          python ingest/fetch_and_parse_advisor.py
 
       - name: 📢 Notify Slack
         if: always()
