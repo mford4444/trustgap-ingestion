@@ -18,13 +18,24 @@ def write_drp_events_to_supabase(records, batch_size=100):
     print("📤 Writing DRP events to Supabase...")
     total = len(records)
     for i in range(0, total, batch_size):
-        batch = records[i:i + batch_size]
-        try:
-            response = supabase.table("advisor_drp_events").upsert(batch, on_conflict=["crd", "flag_type"]).execute()
-            if hasattr(response, 'data'):
-                print(f"✅ Batch {i // batch_size + 1}: Inserted {len(response.data)} records")
-            else:
-                print(f"⚠️ Batch {i // batch_size + 1}: Inserted with unknown response")
-        except Exception as e:
-            print(f"❌ Error inserting batch {i // batch_size + 1}: {e}")
-        sleep(0.25)  # throttle to avoid hammering the API
+    batch = records[i:i + batch_size]
+
+    # 🔧 Normalize all keys in each record to lowercase
+    batch = [{k.lower(): v for k, v in row.items()} for row in batch]
+
+    try:
+        response = supabase.table("advisor_drp_events").upsert(
+            batch,
+            on_conflict=["crd", "flag_type"]
+        ).execute()
+
+        if hasattr(response, 'data'):
+            print(f"✅ Batch {i // batch_size + 1}: Inserted {len(response.data)} records")
+        else:
+            print(f"⚠️ Batch {i // batch_size + 1}: Inserted with unknown response")
+
+    except Exception as e:
+        print(f"❌ Error inserting batch {i // batch_size + 1}: {e}")
+
+    sleep(0.25)  # throttle to avoid hammering the API
+
