@@ -18,20 +18,18 @@ def write_drp_events_to_supabase(records, batch_size=100):
     print("📤 Writing DRP events to Supabase...")
     total = len(records)
     for i in range(0, total, batch_size):
-        batch = records[i:i + batch_size]
+    batch = records[i:i + batch_size]
 
-    # 🔧 Normalize all keys in each record to lowercase
-        batch = [{k.lower(): v for k, v in row.items()} for row in batch]
+    # Normalize keys
+    batch = [{k.lower(): v for k, v in row.items()} for row in batch]
 
-        print("👀 Sample record keys:", list(batch[0].keys()))
-        print("👀 Sample record:", batch[0])
+    # Optional: debug output
+    print("👀 Sample record keys:", list(batch[0].keys()))
+    print("👀 Sample record:", batch[0])
 
     try:
-        response = supabase.table("advisor_drp_events").insert(
-        batch,
-        upsert=True,
-        on_conflict=["crd", "flag_type"]
-    ).execute()
+        # ✅ No on_conflict, uses DB constraints
+        response = supabase.table("advisor_drp_events").upsert(batch).execute()
 
         if hasattr(response, 'data'):
             print(f"✅ Batch {i // batch_size + 1}: Inserted {len(response.data)} records")
@@ -41,5 +39,5 @@ def write_drp_events_to_supabase(records, batch_size=100):
     except Exception as e:
         print(f"❌ Error inserting batch {i // batch_size + 1}: {e}")
 
-    sleep(0.25)  # throttle to avoid hammering the API
+    sleep(0.25)
 
