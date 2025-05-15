@@ -1,8 +1,4 @@
-import sys
 import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 import json
 import requests
 import zipfile
@@ -59,7 +55,6 @@ def parse_drp_events(xml_contents, resume_from=None):
     print("🔍 Parsing DRP records...")
     drp_records = []
     today = datetime.utcnow().isoformat()
-    processed = 0
     skipping = bool(resume_from)
 
     for xml in xml_contents:
@@ -100,12 +95,7 @@ def parse_drp_events(xml_contents, resume_from=None):
                             record["details"][child.tag] = child.text.strip() if child.text else ""
                     drp_records.append(record)
 
-            if len(drp_records) >= BATCH_SIZE:
-                yield drp_records, crd
-                drp_records = []
-
-    if drp_records:
-        yield drp_records, crd
+    return drp_records, crd
 
 if __name__ == "__main__":
     feed_url = get_feed_url()
@@ -113,8 +103,8 @@ if __name__ == "__main__":
     checkpoint = load_checkpoint()
     last_crd = checkpoint.get("last_crd")
 
-    for batch, last_crd in parse_drp_events(xml_files, resume_from=last_crd):
-        print(f"📤 Inserting batch with last CRD = {last_crd}...")
-        write_drp_events_to_supabase(batch, batch_size=BATCH_SIZE)
-        save_checkpoint(last_crd)
-        print("✅ Checkpoint updated.")
+    parsed_drps, last_crd = parse_drp_events(xml_files, resume_from=last_crd)
+
+    write_drp_events_to_supabase(parsed_drps, batch_size=BATCH_SIZE)
+    save_checkpoint(last_crd)
+    print("✅ All DRP records ingested and checkpoint saved.")
