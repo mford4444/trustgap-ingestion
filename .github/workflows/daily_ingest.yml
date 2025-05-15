@@ -1,19 +1,14 @@
-name: Daily SEC Firm Ingestion
+name: Daily SEC + State Firm Ingestion
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # 6am ET every day
+    - cron: '0 10 * * *'  # 6am ET daily
   workflow_dispatch:      # Allow manual triggering
 
 jobs:
   run-ingestion:
     runs-on: ubuntu-latest
 
-    env:
-      AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
-      AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-      AIRTABLE_TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
-
     steps:
       - name: 📅 Checkout repo
         uses: actions/checkout@v3
@@ -28,52 +23,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🚀 Run SEC firm ingestion
+      - name: 🚀 Run SEC + STATE firm ingestion
         run: |
           python ingest/fetch_and_parse_firm_xml.py
 
-      - name: Notify Slack
+      - name: 📣 Notify Slack
         if: always()
         run: |
           STATUS="${{ job.status }}"
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"🔧 *SEC Firm Ingestion (SEC)* completed with status: *${STATUS}*\"}" \
-            $SLACK_WEBHOOK_URL
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  run-state-ingestion:
-    runs-on: ubuntu-latest
-
-    env:
-      AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
-      AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-      AIRTABLE_TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
-
-    steps:
-      - name: 📅 Checkout repo
-        uses: actions/checkout@v3
-
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: 📦 Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: 🚀 Run STATE firm ingestion
-        run: |
-          python ingest/fetch_and_parse_state_firm_xml.py
-
-      - name: Notify Slack
-        if: always()
-        run: |
-          STATUS="${{ job.status }}"
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"🌏 *SEC Firm Ingestion (STATE)* completed with status: *${STATUS}*\"}" \
+            --data "{\"text\":\"📊 *SEC + STATE Firm Ingestion* completed with status: *${STATUS}*\"}" \
             $SLACK_WEBHOOK_URL
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
