@@ -27,10 +27,11 @@ def write_drp_events_to_supabase(records, batch_size=100):
         print("👀 Sample record:", batch[0])
 
     try:
-        response = supabase.table("advisor_drp_events").upsert(
-            batch,
-            on_conflict=["crd", "flag_type"]
-        ).execute()
+        response = supabase.table("advisor_drp_events").insert(
+        batch,
+        upsert=True,
+        on_conflict=["crd", "flag_type"]
+    ).execute()
 
         if hasattr(response, 'data'):
             print(f"✅ Batch {i // batch_size + 1}: Inserted {len(response.data)} records")
