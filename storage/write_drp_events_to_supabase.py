@@ -23,6 +23,9 @@ def write_drp_events_to_supabase(records, batch_size=100):
     # 🔧 Normalize all keys in each record to lowercase
         batch = [{k.lower(): v for k, v in row.items()} for row in batch]
 
+        print("👀 Sample record keys:", list(batch[0].keys()))
+        print("👀 Sample record:", batch[0])
+
     try:
         response = supabase.table("advisor_drp_events").upsert(
             batch,
