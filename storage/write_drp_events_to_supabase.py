@@ -10,7 +10,7 @@ def write_drp_events_to_supabase(records, batch_size=100):
     total = len(records)
     supabase_url = os.getenv("SUPABASE_URL")
     supabase_key = os.getenv("SUPABASE_KEY")
-    table_url = f"{supabase_url}/rest/v1/advisor_drp_events"
+    table_url = f"{supabase_url}/rest/v1/advisor_drp_events?on_conflict=crd,flag_type"
 
     headers = {
         "apikey": supabase_key,
