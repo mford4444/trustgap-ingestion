@@ -2,7 +2,7 @@ name: Ingest DRP Events
 
 on:
   schedule:
-    - cron: '0 4 * * 1'  # Every Monday at 4am UTC
+    - cron: '0 4 * * *'  # Daily at 4am UTC
   workflow_dispatch:     # Allow manual trigger from GitHub UI
 
 jobs:
