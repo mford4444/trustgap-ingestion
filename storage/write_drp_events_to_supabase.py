@@ -30,10 +30,11 @@ def write_drp_events_to_supabase(records, batch_size=100):
 
         try:
             response = requests.post(table_url, json=batch, headers=headers)
-            if response.status_code in [201, 204]:
+            if response.status_code in [200, 201, 204]:
                 print(f"✅ Batch {i // batch_size + 1}: Inserted or updated {len(batch)} records")
             else:
                 print(f"❌ Batch {i // batch_size + 1}: {response.status_code} → {response.text}")
+
         except Exception as e:
             print(f"❌ Batch {i // batch_size + 1} request failed: {e}")
 
