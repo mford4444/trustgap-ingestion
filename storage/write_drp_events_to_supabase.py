@@ -1,43 +1,40 @@
 import os
-from supabase import create_client, Client
+import requests
 from time import sleep
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("Missing SUPABASE_URL or SUPABASE_KEY environment variable.")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-
 def write_drp_events_to_supabase(records, batch_size=100):
-    print("📤 Writing DRP events to Supabase...")
+    print("📤 Writing DRP events to Supabase via REST...")
     total = len(records)
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_KEY")
+    table_url = f"{supabase_url}/rest/v1/advisor_drp_events"
+
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+    }
+
     for i in range(0, total, batch_size):
         batch = records[i:i + batch_size]
 
-        # Normalize keys
+        # Normalize all keys to lowercase to match Supabase schema
         batch = [{k.lower(): v for k, v in row.items()} for row in batch]
 
-        # Optional: debug output
         print("👀 Sample record keys:", list(batch[0].keys()))
         print("👀 Sample record:", batch[0])
 
         try:
-            # ✅ No on_conflict, uses DB constraints
-            response = supabase.table("advisor_drp_events").upsert(batch).execute()
-
-            if hasattr(response, 'data'):
-                print(f"✅ Batch {i // batch_size + 1}: Inserted {len(response.data)} records")
+            response = requests.post(table_url, json=batch, headers=headers)
+            if response.status_code in [201, 204]:
+                print(f"✅ Batch {i // batch_size + 1}: Inserted or updated {len(batch)} records")
             else:
-                print(f"⚠️ Batch {i // batch_size + 1}: Inserted with unknown response")
-
+                print(f"❌ Batch {i // batch_size + 1}: {response.status_code} → {response.text}")
         except Exception as e:
-            print(f"❌ Error inserting batch {i // batch_size + 1}: {e}")
+            print(f"❌ Batch {i // batch_size + 1} request failed: {e}")
 
-        sleep(0.25)
-
+        sleep(0.25)  # Throttle requests slightly to avoid rate limits
