@@ -1,0 +1,42 @@
+name: Sync Advisor Disclosure Flags
+
+on:
+  schedule:
+    - cron: '45 4 * * *'  # Daily at 4:45am UTC, after DRP ingestion
+  workflow_dispatch:
+
+jobs:
+  sync-disclosures:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+    steps:
+      - name: 📅 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🚀 Run advisor disclosure flag sync
+        run: |
+          python ingest/update_advisor_disclosure_flags.py
+
+      - name: 📢 Notify Slack
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🔬 *Advisor Disclosure Sync* completed with status: *${STATUS}*\"}" \
+            $SLACK_WEBHOOK_URL
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
