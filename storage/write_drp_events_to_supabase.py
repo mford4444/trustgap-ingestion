@@ -18,10 +18,10 @@ def write_drp_events_to_supabase(records, batch_size=100):
     print("📤 Writing DRP events to Supabase...")
     total = len(records)
     for i in range(0, total, batch_size):
-    batch = records[i:i + batch_size]
+        batch = records[i:i + batch_size]
 
     # 🔧 Normalize all keys in each record to lowercase
-    batch = [{k.lower(): v for k, v in row.items()} for row in batch]
+        batch = [{k.lower(): v for k, v in row.items()} for row in batch]
 
     try:
         response = supabase.table("advisor_drp_events").upsert(
