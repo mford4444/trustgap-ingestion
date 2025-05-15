@@ -85,7 +85,12 @@ def parse_firms(xml_content, registration_type):
 def write_firms_to_supabase(firms):
     df = pd.DataFrame(firms)
     df = df.drop_duplicates(subset=["crd_number"])
+
+    # 🔧 Fix: convert Timestamp to string
+    df["filing_date"] = df["filing_date"].dt.strftime("%Y-%m-%d")
+
     records = df.to_dict(orient="records")
+
     BATCH_SIZE = 50
     for i in range(0, len(records), BATCH_SIZE):
         batch = records[i:i + BATCH_SIZE]
