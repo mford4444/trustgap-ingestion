@@ -15,7 +15,7 @@ jobs:
       AIRTABLE_TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
 
     steps:
-      - name: 📥 Checkout repo
+      - name: 📅 Checkout repo
         uses: actions/checkout@v3
 
       - name: 🐍 Set up Python
@@ -32,6 +32,16 @@ jobs:
         run: |
           python ingest/fetch_and_parse_firm_xml.py
 
+      - name: Notify Slack
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🔧 *SEC Firm Ingestion (SEC)* completed with status: *${STATUS}*\"}" \
+            $SLACK_WEBHOOK_URL
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   run-state-ingestion:
     runs-on: ubuntu-latest
 
@@ -41,7 +51,7 @@ jobs:
       AIRTABLE_TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
 
     steps:
-      - name: 📥 Checkout repo
+      - name: 📅 Checkout repo
         uses: actions/checkout@v3
 
       - name: 🐍 Set up Python
@@ -57,3 +67,13 @@ jobs:
       - name: 🚀 Run STATE firm ingestion
         run: |
           python ingest/fetch_and_parse_state_firm_xml.py
+
+      - name: Notify Slack
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🌏 *SEC Firm Ingestion (STATE)* completed with status: *${STATUS}*\"}" \
+            $SLACK_WEBHOOK_URL
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
