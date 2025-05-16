@@ -2,5 +2,5 @@ requests
 python-dotenv
 pyairtable
 supabase
-pandastqdm
+pandas
 tqdm
