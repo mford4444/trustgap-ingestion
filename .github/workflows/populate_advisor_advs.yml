@@ -14,16 +14,19 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+  - name: Checkout repo
+    uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+  - name: Set up Python
+    uses: actions/setup-python@v4
+    with:
+      python-version: '3.11'
 
-      - name: Install dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+  - name: Install dependencies
+    run: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install tqdm  # Force install tqdm to guarantee it's there
 
-      - name: Run advisor ADV population script
-        run: python ingest/populate_advisor_advs.py
+  - name: Run advisor ADV population script
+    run: python ingest/populate_advisor_advs.py
