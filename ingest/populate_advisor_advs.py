@@ -3,6 +3,7 @@ from datetime import datetime
 from tqdm import tqdm
 import logging
 import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add repo root to path
 import requests
 import tempfile
 import time

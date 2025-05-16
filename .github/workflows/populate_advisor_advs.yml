@@ -32,5 +32,6 @@ jobs:
           pip install -r requirements.txt
           pip install boto3 python-dotenv tqdm requests supabase
 
-      - name: Run ADV sync script
-        run: python ingest/populate_advisor_advs.py
+      - name: Run advisor ADV population script
+        run: python -m ingest.populate_advisor_advs
+
