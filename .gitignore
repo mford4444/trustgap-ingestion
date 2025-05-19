@@ -178,3 +178,5 @@ cython_debug/
 checkpoint.json
 drp_checkpoint.json
 
+# ADV Logging
+populate_advisor_advs.log
