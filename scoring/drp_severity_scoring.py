@@ -75,7 +75,7 @@ base_map = {
 
 def score_drp_event(event):
     raw_flag = event.get("flag_type") or event.get("event_type")  # fallback for previously scored records
-        normalized = FLAG_TYPE_MAP.get(raw_flag, "Unknown")
+    normalized = FLAG_TYPE_MAP.get(raw_flag, "Unknown")
     
     base = base_map.get(normalized, 0.4)
     
