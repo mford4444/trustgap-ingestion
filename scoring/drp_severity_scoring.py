@@ -252,4 +252,4 @@ def main(debug: bool = False):
 if __name__ == "__main__":
     debug_flag = '--debug' in sys.argv
     inserted = main(debug=debug_flag)
-    sys.exit(0 if inserted == 0 else 10)
+    sys.exit(0)
