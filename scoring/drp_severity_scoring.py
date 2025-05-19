@@ -220,32 +220,32 @@ def main(debug: bool = False):
     insert_advisor_rollups(scored_events)
     logging.info("🎯 DRP severity scoring complete.")
 
-        if debug:
-          base_score_by_label = Counter()
-          for e in scored_events:
-              base, _, _ = score_drp_event(e)
-              raw_flag = e.get("flag_type") or e.get("event_type")
-              label = FLAG_TYPE_MAP.get(raw_flag, "Unknown")
-              base_score_by_label[(label, base)] += 1
+    if debug:
+        base_score_by_label = Counter()
+        for e in scored_events:
+            base, _, _ = score_drp_event(e)
+            raw_flag = e.get("flag_type") or e.get("event_type")
+            label = FLAG_TYPE_MAP.get(raw_flag, "Unknown")
+            base_score_by_label[(label, base)] += 1
 
-          logging.info("🧪 Base Score Counts by Normalized Label:")
-          for (label, base), count in base_score_by_label.items():
-              logging.info(f"  {label}: base={base} count={count}")
+        logging.info("🧪 Base Score Counts by Normalized Label:")
+        for (label, base), count in base_score_by_label.items():
+            logging.info(f"  {label}: base={base} count={count}")
 
-          if unmapped_flag_counts:
-              logging.info("⚠️ Summary of unmapped flag_types:")
-              for flag, count in unmapped_flag_counts.items():
-                  logging.info(f"  {flag}: {count}")
+        if unmapped_flag_counts:
+            logging.info("⚠️ Summary of unmapped flag_types:")
+            for flag, count in unmapped_flag_counts.items():
+                logging.info(f"  {flag}: {count}")
 
-          if unmapped_label_counts:
-              logging.info("⚠️ Summary of unmapped labels:")
-              for label, count in unmapped_label_counts.items():
-                  logging.info(f"  {label}: {count}")
+        if unmapped_label_counts:
+            logging.info("⚠️ Summary of unmapped labels:")
+            for label, count in unmapped_label_counts.items():
+                logging.info(f"  {label}: {count}")
 
-          if low_score_label_counts:
-              logging.info("⚠️ Labels scoring 0.4 by default:")
-              for label, count in low_score_label_counts.items():
-                  logging.info(f"  {label}: {count}")
+        if low_score_label_counts:
+            logging.info("⚠️ Labels scoring 0.4 by default:")
+            for label, count in low_score_label_counts.items():
+                logging.info(f"  {label}: {count}")
 
     return len(events)
 
