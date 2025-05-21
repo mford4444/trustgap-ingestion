@@ -1,24 +1,21 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from storage.firm_cache import load_previous_firms, save_current_firms
 from supabase import create_client, Client
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import os
 import requests
 import xml.etree.ElementTree as ET
 import zipfile
 import gzip
 import io
-from datetime import datetime, timedelta
 import pandas as pd
 import math
+from collections import Counter
+from storage.firm_cache import load_previous_firms, save_current_firms
 
 # ✅ Load environment variables
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 DRY_RUN = False  # Set to False to enable DB write
@@ -116,13 +113,11 @@ def parse_firms(xml_content, registration_type):
 
         item5f = form.find("Item5F") if form is not None else None
         item5a = form.find("Item5A") if form is not None else None
-        item5b = form.find("Item5B") if form is not None else None
         item6b = form.find("Item6B") if form is not None else None
 
         aum = clean_float(safe_text(item5f, "Q5F2C"))
         client_count = clean_int(safe_text(item5f, "Q5F2F"))
         employees = clean_int(safe_text(item5a, "TtlEmp"))
-        advisors = clean_int(safe_text(item5b, "Q5B1"))
 
         address = firm.find("MainAddr")
         if address is None or not address.attrib.get("City"):
@@ -157,7 +152,6 @@ def parse_firms(xml_content, registration_type):
             "filing_date": filing_dt,
             "total_regulatory_aum": aum,
             "total_employees": employees,
-            "advisor_count": advisors,
             "client_count": client_count,
             "dual_registrant": dual_reg,
             "firm_drp_count": firm_drp_count,
@@ -202,11 +196,8 @@ if __name__ == "__main__":
         previous_firms = load_previous_firms()
         new_or_updated = []
         for firm in parsed_firms:
-            crd = str(firm["crd_number"])
-            filing_date = firm["filing_date"].strftime("%Y-%m-%d")
-            prev_date = previous_firms.get(crd)
-            if prev_date is None or filing_date > prev_date:
-                new_or_updated.append(firm)
+            # Force all firms to be considered updated for this test run
+            new_or_updated.append(firm)
 
         print(f"📌 New or updated firms: {len(new_or_updated)}")
 
@@ -215,7 +206,6 @@ if __name__ == "__main__":
             fields=[
                 "total_regulatory_aum",
                 "total_employees",
-                "advisor_count",
                 "client_count",
                 "office_city",
                 "office_state",
