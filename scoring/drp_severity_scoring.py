@@ -76,9 +76,9 @@ base_map = {
 def score_drp_event(event):
     raw_flag = event.get("flag_type") or event.get("event_type")  # fallback for previously scored records
     normalized = FLAG_TYPE_MAP.get(raw_flag, "Unknown")
-    
+
     base = base_map.get(normalized, 0.4)
-    
+
     desc = (event.get("description") or "").lower()
     adjusted = base
     reason = ""
@@ -96,24 +96,39 @@ def score_drp_event(event):
     adjusted = min(adjusted, 1.0)
     return base, adjusted, reason.strip()
 
+def fetch_existing_event_ids():
+    logging.info("📥 Fetching existing event IDs from Supabase...")
+    existing_ids = set()
+    last_id = ""
+    while True:
+        query = supabase.table("drp_event_scores").select("event_id").order("event_id").limit(1000)
+        if last_id:
+            query = query.gte("event_id", last_id)
+        result = query.execute()
+        rows = result.data or []
+
+        if not rows:
+            break
+
+        for r in rows:
+            existing_ids.add(r["event_id"])
+        last_id = rows[-1]["event_id"]
+        if len(rows) < 1000:
+            break
+    logging.info(f"✅ Retrieved {len(existing_ids)} existing event IDs")
+    return existing_ids
+
 def insert_drp_event_scores(events):
     scored_events = []
     now = datetime.utcnow().isoformat()
     rows = []
-    seen_event_ids = set()
+    existing_event_ids = fetch_existing_event_ids()
 
     for e in events:
-        base, adjusted, reason = score_drp_event(e)
         event_id = hash_event(e)
-        if event_id in seen_event_ids:
-            continue
-        seen_event_ids.add(event_id)
-
-        if round(base, 2) == 0.4:
-            logging.warning(
-                f"🚨 INSERTING 0.4 — flag_type: {e.get('flag_type')}, crd: {e['crd']}, "
-                f"description: {(e.get('description') or '')[:80]}"
-            )
+        if event_id in existing_event_ids:
+            continue  # Skip previously inserted event
+        base, adjusted, reason = score_drp_event(e)
 
         scored_event = {
             "crd": e["crd"],
@@ -139,7 +154,6 @@ def insert_drp_event_scores(events):
             logging.info(f"✅ Wrote batch {i}–{i + len(chunk) - 1} to drp_event_scores")
 
     return scored_events
-    
 
 def insert_advisor_rollups(scored_events):
     now = datetime.utcnow().isoformat()
@@ -193,7 +207,6 @@ def get_all_drp_events():
         result = query.execute()
         batch = result.data or []
 
-        # Skip the first record if we're continuing from a previous ID
         if last_id and batch and batch[0]["id"] == last_id:
             batch = batch[1:]
 
